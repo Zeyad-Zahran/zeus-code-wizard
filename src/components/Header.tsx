@@ -13,7 +13,7 @@ export const Header = () => {
               <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-lg" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Zeus Code Wizard</h1>
+              <h1 className="text-xl font-bold text-white">Zeus AI Coder</h1>
               <p className="text-sm text-slate-400">AI-Powered Development</p>
             </div>
           </div>
