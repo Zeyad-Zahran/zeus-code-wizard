@@ -11,7 +11,7 @@ interface CodeEditorProps {
 export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
   const [language, setLanguage] = useState('html');
   const [showPreview, setShowPreview] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [previewContent, setPreviewContent] = useState('');
 
   const handleCopy = async () => {
     try {
@@ -44,76 +44,77 @@ export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
     toast.success('Code downloaded successfully!');
   };
 
-  const updatePreview = () => {
-    if (iframeRef.current && code && (language === 'html' || language === 'css' || language === 'javascript')) {
-      const iframe = iframeRef.current;
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      
-      if (doc) {
-        let htmlContent = '';
-        
-        if (language === 'html') {
-          htmlContent = code;
-        } else if (language === 'css') {
-          htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <style>${code}</style>
-            </head>
-            <body>
-              <div class="preview-content">
-                <h1>CSS Preview</h1>
-                <p>This is a sample paragraph to demonstrate your CSS styles.</p>
-                <button>Sample Button</button>
-                <div class="box">Sample Box</div>
-              </div>
-            </body>
-            </html>
-          `;
-        } else if (language === 'javascript') {
-          htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                .console { background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; }
-              </style>
-            </head>
-            <body>
-              <h1>JavaScript Preview</h1>
-              <div id="output"></div>
-              <div class="console" id="console"></div>
-              <script>
-                const originalLog = console.log;
-                console.log = function(...args) {
-                  originalLog.apply(console, args);
-                  const consoleDiv = document.getElementById('console');
-                  consoleDiv.innerHTML += args.join(' ') + '\\n';
-                };
-                
-                try {
-                  ${code}
-                } catch (error) {
-                  document.getElementById('console').innerHTML += 'Error: ' + error.message;
-                }
-              </script>
-            </body>
-            </html>
-          `;
-        }
-        
-        doc.open();
-        doc.write(htmlContent);
-        doc.close();
-      }
+  const generatePreviewContent = () => {
+    if (!code || !['html', 'css', 'javascript'].includes(language)) {
+      return '';
     }
+
+    let htmlContent = '';
+    
+    if (language === 'html') {
+      htmlContent = code;
+    } else if (language === 'css') {
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>${code}</style>
+        </head>
+        <body>
+          <div class="preview-content">
+            <h1>CSS Preview</h1>
+            <p>This is a sample paragraph to demonstrate your CSS styles.</p>
+            <button>Sample Button</button>
+            <div class="box">Sample Box</div>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (language === 'javascript') {
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .console { background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; }
+          </style>
+        </head>
+        <body>
+          <h1>JavaScript Preview</h1>
+          <div id="output"></div>
+          <div class="console" id="console"></div>
+          <script>
+            const originalLog = console.log;
+            console.log = function(...args) {
+              originalLog.apply(console, args);
+              const consoleDiv = document.getElementById('console');
+              if (consoleDiv) {
+                consoleDiv.innerHTML += args.join(' ') + '\\n';
+              }
+            };
+            
+            try {
+              ${code}
+            } catch (error) {
+              const consoleDiv = document.getElementById('console');
+              if (consoleDiv) {
+                consoleDiv.innerHTML += 'Error: ' + error.message;
+              }
+            }
+          </script>
+        </body>
+        </html>
+      `;
+    }
+    
+    return htmlContent;
   };
 
   useEffect(() => {
     if (showPreview) {
-      updatePreview();
+      const content = generatePreviewContent();
+      setPreviewContent(content);
     }
   }, [code, language, showPreview]);
 
@@ -175,7 +176,7 @@ export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
         {showPreview && canPreview ? (
           <div className="w-full h-96 bg-white rounded-lg border border-slate-700 overflow-hidden">
             <iframe
-              ref={iframeRef}
+              srcDoc={previewContent}
               className="w-full h-full"
               title="Code Preview"
               sandbox="allow-scripts"
