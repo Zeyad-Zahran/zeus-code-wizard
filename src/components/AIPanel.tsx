@@ -31,7 +31,7 @@ export const AIPanel = ({ onCodeGenerated, onTabChange }: AIPanelProps) => {
       // Simulate AI generation (replace with actual API call)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const mockCode = generateMockCode(prompt);
+      const mockCode = generateCodeBasedOnPrompt(prompt);
       onCodeGenerated(mockCode);
       
       setHistory(prev => [...prev, { 
@@ -56,8 +56,189 @@ export const AIPanel = ({ onCodeGenerated, onTabChange }: AIPanelProps) => {
     }
   };
 
-  const generateMockCode = (prompt: string): string => {
-    if (prompt.toLowerCase().includes('login')) {
+  const generateCodeBasedOnPrompt = (prompt: string): string => {
+    const lowerPrompt = prompt.toLowerCase();
+    
+    if (lowerPrompt.includes('contact form') && lowerPrompt.includes('bootstrap')) {
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .contact-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .required {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="contact-container">
+            <h2 class="text-center mb-4">Contact Us</h2>
+            <form id="contactForm" novalidate>
+                <div class="mb-3">
+                    <label for="name" class="form-label">
+                        Name <span class="required">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="name" required>
+                    <div class="invalid-feedback">Please provide a valid name.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input type="email" class="form-control" id="email" required>
+                    <div class="invalid-feedback">Please provide a valid email.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Phone (Optional)</label>
+                    <input type="tel" class="form-control" id="phone">
+                    <div class="invalid-feedback">Please provide a valid phone number.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="subject" class="form-label">
+                        Subject <span class="required">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="subject" required>
+                    <div class="invalid-feedback">Please provide a subject.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="message" class="form-label">
+                        Message <span class="required">*</span>
+                    </label>
+                    <textarea class="form-control" id="message" rows="5" required></textarea>
+                    <div class="invalid-feedback">Please provide a message.</div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </div>
+            </form>
+            
+            <div id="successMessage" class="alert alert-success mt-3" style="display: none;">
+                <strong>Thank you!</strong> Your message has been sent successfully.
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function() {
+            'use strict';
+            
+            const form = document.getElementById('contactForm');
+            const successMessage = document.getElementById('successMessage');
+            
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Custom validation
+                let isValid = true;
+                const name = document.getElementById('name');
+                const email = document.getElementById('email');
+                const phone = document.getElementById('phone');
+                const subject = document.getElementById('subject');
+                const message = document.getElementById('message');
+                
+                // Reset previous validation states
+                [name, email, phone, subject, message].forEach(field => {
+                    field.classList.remove('is-valid', 'is-invalid');
+                });
+                
+                // Validate name
+                if (!name.value.trim()) {
+                    name.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    name.classList.add('is-valid');
+                }
+                
+                // Validate email
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email.value.trim() || !emailRegex.test(email.value)) {
+                    email.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    email.classList.add('is-valid');
+                }
+                
+                // Validate phone (optional but if provided, should be valid)
+                const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+                if (phone.value.trim() && !phoneRegex.test(phone.value.replace(/\s/g, ''))) {
+                    phone.classList.add('is-invalid');
+                    isValid = false;
+                } else if (phone.value.trim()) {
+                    phone.classList.add('is-valid');
+                }
+                
+                // Validate subject
+                if (!subject.value.trim()) {
+                    subject.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    subject.classList.add('is-valid');
+                }
+                
+                // Validate message
+                if (!message.value.trim()) {
+                    message.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    message.classList.add('is-valid');
+                }
+                
+                if (isValid) {
+                    // Show success message
+                    successMessage.style.display = 'block';
+                    form.reset();
+                    
+                    // Hide success message after 5 seconds
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 5000);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>`;
+    }
+    
+    if (lowerPrompt.includes('login')) {
       return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -128,12 +309,39 @@ export const AIPanel = ({ onCodeGenerated, onTabChange }: AIPanelProps) => {
 </html>`;
     }
     
+    // Default response for other prompts
     return `<!-- Generated code for: ${prompt} -->
-<div class="generated-content">
-    <h1>Your request has been processed</h1>
-    <p>This is a mock response. In a real implementation, this would be generated by an AI service.</p>
-    <p>Request: ${prompt}</p>
-</div>`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .generated-content {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="generated-content">
+        <h1>Your Request Has Been Processed</h1>
+        <p><strong>Request:</strong> ${prompt}</p>
+        <p>This is a generated response. In a real implementation, this would be created by an AI service based on your specific requirements.</p>
+        <p>The generated code includes basic HTML structure and styling to get you started.</p>
+    </div>
+</body>
+</html>`;
   };
 
   return (
