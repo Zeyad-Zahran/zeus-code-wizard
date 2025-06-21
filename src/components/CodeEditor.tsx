@@ -46,26 +46,59 @@ export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
 
   const generatePreviewContent = () => {
     if (!code || !['html', 'css', 'javascript'].includes(language)) {
-      return '';
+      return '<div style="padding: 20px; font-family: Arial; color: #666;">No preview available for this language</div>';
     }
 
     let htmlContent = '';
     
     if (language === 'html') {
-      htmlContent = code;
+      // If it's a complete HTML document, use it as is
+      if (code.toLowerCase().includes('<!doctype') || code.toLowerCase().includes('<html')) {
+        htmlContent = code;
+      } else {
+        // Wrap HTML fragments in a basic document
+        htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Preview</title>
+          </head>
+          <body>
+            ${code}
+          </body>
+          </html>
+        `;
+      }
     } else if (language === 'css') {
       htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
-          <style>${code}</style>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>CSS Preview</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              line-height: 1.6; 
+            }
+            ${code}
+          </style>
         </head>
         <body>
           <div class="preview-content">
             <h1>CSS Preview</h1>
             <p>This is a sample paragraph to demonstrate your CSS styles.</p>
             <button>Sample Button</button>
-            <div class="box">Sample Box</div>
+            <div class="box" style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">Sample Box</div>
+            <ul>
+              <li>List item 1</li>
+              <li>List item 2</li>
+              <li>List item 3</li>
+            </ul>
           </div>
         </body>
         </html>
@@ -75,31 +108,62 @@ export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>JavaScript Preview</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .console { background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; }
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 20px; 
+              background: #f5f5f5;
+            }
+            .console { 
+              background: #1a1a1a; 
+              color: #00ff00; 
+              padding: 15px; 
+              border-radius: 4px; 
+              font-family: 'Courier New', monospace; 
+              margin: 10px 0;
+              white-space: pre-wrap;
+              min-height: 100px;
+            }
+            .output {
+              background: white;
+              border: 1px solid #ddd;
+              padding: 15px;
+              border-radius: 4px;
+              margin: 10px 0;
+              min-height: 50px;
+            }
           </style>
         </head>
         <body>
           <h1>JavaScript Preview</h1>
-          <div id="output"></div>
-          <div class="console" id="console"></div>
+          <div id="output" class="output"></div>
+          <h3>Console Output:</h3>
+          <div class="console" id="console">Ready...</div>
           <script>
+            // Override console.log to display output
             const originalLog = console.log;
+            const consoleDiv = document.getElementById('console');
+            const outputDiv = document.getElementById('output');
+            
             console.log = function(...args) {
               originalLog.apply(console, args);
-              const consoleDiv = document.getElementById('console');
               if (consoleDiv) {
-                consoleDiv.innerHTML += args.join(' ') + '\\n';
+                consoleDiv.textContent += args.join(' ') + '\\n';
               }
             };
+            
+            // Clear console initially
+            consoleDiv.textContent = '';
             
             try {
               ${code}
             } catch (error) {
-              const consoleDiv = document.getElementById('console');
               if (consoleDiv) {
-                consoleDiv.innerHTML += 'Error: ' + error.message;
+                consoleDiv.textContent += 'Error: ' + error.message + '\\n';
+                consoleDiv.style.color = '#ff6b6b';
               }
             }
           </script>
@@ -177,9 +241,9 @@ export const CodeEditor = ({ code, onChange }: CodeEditorProps) => {
           <div className="w-full h-96 bg-white rounded-lg border border-slate-700 overflow-hidden">
             <iframe
               srcDoc={previewContent}
-              className="w-full h-full"
+              className="w-full h-full border-0"
               title="Code Preview"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
             />
           </div>
         ) : (
