@@ -162,7 +162,7 @@ Please provide only the complete HTML code without any explanations or markdown 
         </div>
         <ul className="text-sm text-slate-300 space-y-1">
           <li>• Fast and efficient AI code generation</li>
-          <li>• Powered by Google's latest Gemini model</li>
+          <li>• Powered by Zeus AI for AI Development</li>
           <li>• Creates complete web applications</li>
           <li>• Supports modern frameworks and best practices</li>
         </ul>
