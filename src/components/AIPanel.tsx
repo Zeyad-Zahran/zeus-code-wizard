@@ -158,7 +158,7 @@ Please provide only the complete HTML code without any explanations or markdown 
       <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-4 border border-blue-500/20">
         <div className="flex items-center space-x-2 mb-2">
           <Zap className="w-5 h-5 text-yellow-400" />
-          <h3 className="font-semibold text-white">Google Gemini 1.5 Flash</h3>
+          <h3 className="font-semibold text-white">zeus ai coder</h3>
         </div>
         <ul className="text-sm text-slate-300 space-y-1">
           <li>• Fast and efficient AI code generation</li>
