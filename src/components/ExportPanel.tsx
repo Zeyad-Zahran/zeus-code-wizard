@@ -8,7 +8,7 @@ interface ExportPanelProps {
 
 export const ExportPanel = ({ code }: ExportPanelProps) => {
   const [isExporting, setIsExporting] = useState(false);
-  const [githubToken] = useState('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');
+  const [githubToken] = useState('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');
   const [bitlyToken] = useState('4fe7d43aa8957fee55e6907556dc39c4f7e72d90');
 
   const exportOptions = [

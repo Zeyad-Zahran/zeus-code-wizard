@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Monitor, Tablet, Smartphone, ExternalLink, Upload, Github } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,7 +11,7 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
   const [showExternal, setShowExternal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const githubToken = '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';
+  const githubToken = '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';
   const bitlyToken = '4fe7d43aa8957fee55e6907556dc39c4f7e72d90';
 
   const viewModes = {
