@@ -30,7 +30,6 @@ export const VisualEditor = ({ initialCode, onSave, onCancel }: VisualEditorProp
     canUndo,
     canRedo,
     exportToHTML,
-    importFromHTML,
     saveToStorage,
     loadFromStorage
   } = useEditorStore();
