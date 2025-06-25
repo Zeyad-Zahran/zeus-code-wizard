@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Monitor, Tablet, Smartphone, ExternalLink, Upload, Github } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, ExternalLink, Upload, Github, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { VisualEditor } from './VisualEditor';
 
 interface ResponsivePreviewProps {
   code: string;
@@ -10,6 +11,8 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [showExternal, setShowExternal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentCode, setCurrentCode] = useState(code);
 
   const githubToken = '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';
   const bitlyToken = '4fe7d43aa8957fee55e6907556dc39c4f7e72d90';
@@ -23,7 +26,7 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
   const openExternalPreview = () => {
     const newWindow = window.open('', '_blank', 'width=1200,height=800,resizable=yes,scrollbars=yes');
     if (newWindow) {
-      newWindow.document.write(code);
+      newWindow.document.write(currentCode);
       newWindow.document.close();
       setShowExternal(true);
     }
@@ -119,7 +122,7 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
   };
 
   const handleQuickUpload = async () => {
-    if (!code) {
+    if (!currentCode) {
       toast.error('No code to upload');
       return;
     }
@@ -133,7 +136,7 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
       const repo = await createGitHubRepo(repoName);
 
       toast.success('📤 Uploading website files...');
-      await uploadFileToRepo(repo.owner.login, repo.name, 'index.html', code);
+      await uploadFileToRepo(repo.owner.login, repo.name, 'index.html', currentCode);
 
       toast.success('🌐 Enabling GitHub Pages...');
       await enableGitHubPages(repo.owner.login, repo.name);
@@ -167,6 +170,26 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
     }
   };
 
+  const handleSaveFromEditor = (newCode: string) => {
+    setCurrentCode(newCode);
+    setIsEditMode(false);
+    toast.success('Changes saved successfully!');
+  };
+
+  const handleCancelEditor = () => {
+    setIsEditMode(false);
+  };
+
+  if (isEditMode) {
+    return (
+      <VisualEditor
+        initialCode={currentCode}
+        onSave={handleSaveFromEditor}
+        onCancel={handleCancelEditor}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* View Mode Controls */}
@@ -193,8 +216,16 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
         
         <div className="flex items-center space-x-2">
           <button
+            onClick={() => setIsEditMode(true)}
+            className="flex items-center space-x-1 px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors text-sm"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit Mode</span>
+          </button>
+          
+          <button
             onClick={handleQuickUpload}
-            disabled={isUploading || !code}
+            disabled={isUploading || !currentCode}
             className="flex items-center space-x-1 px-3 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md transition-colors text-sm"
           >
             {isUploading ? (
@@ -231,7 +262,7 @@ export const ResponsivePreview = ({ code }: ResponsivePreviewProps) => {
           }}
         >
           <iframe
-            srcDoc={code || '<html><body><div style="padding: 20px; text-align: center; color: #666;">No code to preview</div></body></html>'}
+            srcDoc={currentCode || '<html><body><div style="padding: 20px; text-align: center; color: #666;">No code to preview</div></body></html>'}
             className="w-full h-full border-0 rounded-lg"
             title="Website Preview"
             sandbox="allow-scripts"
