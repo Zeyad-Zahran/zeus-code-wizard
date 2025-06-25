@@ -20,5 +20,10 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      useEffect(() => {
+  console.log("Env Token:", import.meta.env.VITE_GITHUB_TOKEN);
+    }, []);
+    </script>
   </body>
 </html>
