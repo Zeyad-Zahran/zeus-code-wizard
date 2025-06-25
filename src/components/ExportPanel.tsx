@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Github, FileCode, Smartphone, Globe, Upload } from 'lucide-react';
+import { Download, Github, FileCode, Smartphone, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ExportPanelProps {
@@ -8,28 +8,13 @@ interface ExportPanelProps {
 
 export const ExportPanel = ({ code }: ExportPanelProps) => {
   const [isExporting, setIsExporting] = useState(false);
-  const [githubToken] = useState('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');
+  const githubToken = import.meta.env.VITE_GITHUB_TOKEN;
   const [bitlyToken] = useState('4fe7d43aa8957fee55e6907556dc39c4f7e72d90');
 
   const exportOptions = [
-    { 
-      id: 'html', 
-      label: 'HTML/CSS/JS', 
-      icon: FileCode,
-      description: 'Pure web files ready for any hosting'
-    },
-    { 
-      id: 'react', 
-      label: 'React Project', 
-      icon: Smartphone,
-      description: 'Modern React application structure'
-    },
-    { 
-      id: 'wordpress', 
-      label: 'WordPress Theme', 
-      icon: Globe,
-      description: 'Ready-to-install WordPress theme'
-    }
+    { id: 'html', label: 'HTML/CSS/JS', icon: FileCode, description: 'Pure web files ready for any hosting' },
+    { id: 'react', label: 'React Project', icon: Smartphone, description: 'Modern React application structure' },
+    { id: 'wordpress', label: 'WordPress Theme', icon: Globe, description: 'Ready-to-install WordPress theme' }
   ];
 
   const createGitHubRepo = async (repoName: string) => {
@@ -48,16 +33,12 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
     return await response.json();
   };
 
   const uploadFileToRepo = async (owner: string, repo: string, path: string, content: string) => {
     const encodedContent = btoa(unescape(encodeURIComponent(content)));
-    
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
@@ -71,10 +52,7 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to upload ${path}: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`Failed to upload ${path}: ${response.status}`);
     return await response.json();
   };
 
@@ -86,18 +64,10 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json'
       },
-      body: JSON.stringify({
-        source: {
-          branch: 'main',
-          path: '/'
-        }
-      })
+      body: JSON.stringify({ source: { branch: 'main', path: '/' } })
     });
 
-    if (!response.ok && response.status !== 409) { // 409 means pages already enabled
-      throw new Error(`Failed to enable GitHub Pages: ${response.status}`);
-    }
-
+    if (!response.ok && response.status !== 409) throw new Error(`Failed to enable GitHub Pages: ${response.status}`);
     return response.status === 409 ? { already_exists: true } : await response.json();
   };
 
@@ -114,10 +84,7 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`Bit.ly API error: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`Bit.ly API error: ${response.status}`);
     return await response.json();
   };
 
@@ -128,11 +95,11 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
     }
 
     setIsExporting(true);
-    
+
     try {
       let exportContent = code;
       let filename = 'website';
-      
+
       switch (type) {
         case 'html':
           filename = 'website.html';
@@ -156,7 +123,7 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast.success(`${type.toUpperCase()} export completed!`);
     } catch (error) {
       toast.error('Export failed. Please try again.');
@@ -172,39 +139,27 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
     }
 
     setIsExporting(true);
-    
+
     try {
       const repoName = `zeus-ai-site-${Date.now()}`;
-      
-      // Step 1: Create GitHub repository
+
       toast.success('Creating GitHub repository...');
       const repo = await createGitHubRepo(repoName);
-      console.log('Repository created:', repo);
-
-      // Step 2: Upload index.html
       toast.success('Uploading website files...');
       await uploadFileToRepo(repo.owner.login, repo.name, 'index.html', code);
-
-      // Step 3: Enable GitHub Pages
       toast.success('Enabling GitHub Pages...');
       await enableGitHubPages(repo.owner.login, repo.name);
 
-      // Step 4: Create Bit.ly short link
       const pagesUrl = `https://${repo.owner.login.toLowerCase()}.github.io/${repo.name}`;
-      
-      // Wait a bit for GitHub Pages to be ready
+
       setTimeout(async () => {
         try {
           toast.success('Creating short link...');
           const bitlyResponse = await createBitlyLink(pagesUrl);
-          
           toast.success(`🎉 Website deployed successfully!`);
           toast.success(`📱 Short URL: ${bitlyResponse.link}`);
-          
-          // Copy short URL to clipboard
           await navigator.clipboard.writeText(bitlyResponse.link);
           toast.success('Short URL copied to clipboard!');
-          
         } catch (bitlyError) {
           console.error('Bit.ly error:', bitlyError);
           toast.success(`✅ Website deployed to: ${pagesUrl}`);
@@ -212,7 +167,6 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
           toast.success('GitHub Pages URL copied to clipboard!');
         }
       }, 2000);
-      
     } catch (error) {
       console.error('GitHub deployment error:', error);
       toast.error('GitHub deployment failed. Please check your tokens and try again.');
@@ -261,7 +215,6 @@ ${htmlCode}
         <p className="text-slate-400">Choose your preferred format and deployment method</p>
       </div>
 
-      {/* Export Options */}
       <div className="grid md:grid-cols-3 gap-4">
         {exportOptions.map((option) => {
           const IconComponent = option.icon;
@@ -282,7 +235,6 @@ ${htmlCode}
         })}
       </div>
 
-      {/* GitHub Integration */}
       <div className="bg-gradient-to-r from-slate-800/50 to-purple-900/30 rounded-lg p-4 border border-purple-500/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -302,7 +254,6 @@ ${htmlCode}
         </div>
       </div>
 
-      {/* Status */}
       {!code && (
         <div className="text-center text-slate-500 py-8">
           <Download className="w-12 h-12 mx-auto mb-4 opacity-50" />
