@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Download, Github, FileCode, Smartphone, Globe } from 'lucide-react';
+import { Download, Upload, FileCode, Smartphone, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExportPanelProps {
   code: string;
@@ -8,8 +9,6 @@ interface ExportPanelProps {
 
 export const ExportPanel = ({ code }: ExportPanelProps) => {
   const [isExporting, setIsExporting] = useState(false);
-  const githubToken = import.meta.env.VITE_GITHUB_TOKEN;
-  const [bitlyToken] = useState('4fe7d43aa8957fee55e6907556dc39c4f7e72d90');
 
   const exportOptions = [
     { id: 'html', label: 'HTML/CSS/JS', icon: FileCode, description: 'Pure web files ready for any hosting' },
@@ -17,75 +16,28 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
     { id: 'wordpress', label: 'WordPress Theme', icon: Globe, description: 'Ready-to-install WordPress theme' }
   ];
 
-  const createGitHubRepo = async (repoName: string) => {
-    const response = await fetch('https://api.github.com/user/repos', {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        name: repoName,
-        description: 'Website created with Zeus AI Coder',
-        public: true,
-        auto_init: true
-      })
-    });
+  const uploadWebsiteToSupabase = async (htmlContent: string) => {
+    const fileName = `website-${Date.now()}.html`;
+    
+    // Create a file blob
+    const file = new File([htmlContent], fileName, { type: 'text/html' });
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('websites')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
-    if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
-    return await response.json();
-  };
-
-  const uploadFileToRepo = async (owner: string, repo: string, path: string, content: string) => {
-    const encodedContent = btoa(unescape(encodeURIComponent(content)));
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        message: `Add ${path} via Zeus AI Coder`,
-        content: encodedContent
-      })
-    });
-
-    if (!response.ok) throw new Error(`Failed to upload ${path}: ${response.status}`);
-    return await response.json();
-  };
-
-  const enableGitHubPages = async (owner: string, repo: string) => {
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({ source: { branch: 'main', path: '/' } })
-    });
-
-    if (!response.ok && response.status !== 409) throw new Error(`Failed to enable GitHub Pages: ${response.status}`);
-    return response.status === 409 ? { already_exists: true } : await response.json();
-  };
-
-  const createBitlyLink = async (longUrl: string) => {
-    const response = await fetch('https://api-ssl.bitly.com/v4/shorten', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${bitlyToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        long_url: longUrl,
-        title: 'Zeus AI Generated Site'
-      })
-    });
-
-    if (!response.ok) throw new Error(`Bit.ly API error: ${response.status}`);
-    return await response.json();
+    if (error) throw error;
+    
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('websites')
+      .getPublicUrl(fileName);
+    
+    return publicUrl;
   };
 
   const handleExport = async (type: string) => {
@@ -132,7 +84,7 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
     }
   };
 
-  const handleGithubUpload = async () => {
+  const handleDirectUpload = async () => {
     if (!code) {
       toast.error('No code to upload');
       return;
@@ -141,35 +93,16 @@ export const ExportPanel = ({ code }: ExportPanelProps) => {
     setIsExporting(true);
 
     try {
-      const repoName = `zeus-ai-site-${Date.now()}`;
-
-      toast.success('Creating GitHub repository...');
-      const repo = await createGitHubRepo(repoName);
-      toast.success('Uploading website files...');
-      await uploadFileToRepo(repo.owner.login, repo.name, 'index.html', code);
-      toast.success('Enabling GitHub Pages...');
-      await enableGitHubPages(repo.owner.login, repo.name);
-
-      const pagesUrl = `https://${repo.owner.login.toLowerCase()}.github.io/${repo.name}`;
-
-      setTimeout(async () => {
-        try {
-          toast.success('Creating short link...');
-          const bitlyResponse = await createBitlyLink(pagesUrl);
-          toast.success(`🎉 Website deployed successfully!`);
-          toast.success(`📱 Short URL: ${bitlyResponse.link}`);
-          await navigator.clipboard.writeText(bitlyResponse.link);
-          toast.success('Short URL copied to clipboard!');
-        } catch (bitlyError) {
-          console.error('Bit.ly error:', bitlyError);
-          toast.success(`✅ Website deployed to: ${pagesUrl}`);
-          await navigator.clipboard.writeText(pagesUrl);
-          toast.success('GitHub Pages URL copied to clipboard!');
-        }
-      }, 2000);
+      toast.success('Uploading website...');
+      const publicUrl = await uploadWebsiteToSupabase(code);
+      
+      toast.success('🎉 Website uploaded successfully!');
+      toast.success(`📱 Live URL: ${publicUrl}`);
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success('Website URL copied to clipboard!');
     } catch (error) {
-      console.error('GitHub deployment error:', error);
-      toast.error('GitHub deployment failed. Please check your tokens and try again.');
+      console.error('Upload error:', error);
+      toast.error('Upload failed. Please try again.');
     } finally {
       setIsExporting(false);
     }
@@ -238,18 +171,18 @@ ${htmlCode}
       <div className="bg-gradient-to-r from-slate-800/50 to-purple-900/30 rounded-lg p-4 border border-purple-500/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Github className="w-6 h-6 text-white" />
+            <Upload className="w-6 h-6 text-white" />
             <div>
-              <h4 className="font-semibold text-white">Automatic GitHub Deployment</h4>
-              <p className="text-sm text-slate-400">Create repo, enable Pages & get Bit.ly short link</p>
+              <h4 className="font-semibold text-white">Direct Website Upload</h4>
+              <p className="text-sm text-slate-400">Upload your website and get a live link instantly</p>
             </div>
           </div>
           <button
-            onClick={handleGithubUpload}
+            onClick={handleDirectUpload}
             disabled={isExporting || !code}
             className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
           >
-            {isExporting ? 'Deploying...' : 'Deploy & Share'}
+            {isExporting ? 'Uploading...' : 'Upload & Share'}
           </button>
         </div>
       </div>
