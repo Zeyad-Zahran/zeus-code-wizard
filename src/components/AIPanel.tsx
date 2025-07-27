@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 interface AIPanelProps {
   onCodeGenerated: (code: string) => void;
   onTabChange: (tab: string) => void;
+  currentCode?: string;
 }
 
-export const AIPanel = ({ onCodeGenerated, onTabChange }: AIPanelProps) => {
+export const AIPanel = ({ onCodeGenerated, onTabChange, currentCode }: AIPanelProps) => {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<Array<{type: 'user' | 'ai', content: string}>>([]);

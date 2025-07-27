@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { CodeEditor } from '@/components/CodeEditor';
 import { AIPanel } from '@/components/AIPanel';
@@ -8,11 +8,84 @@ import { ResponsivePreview } from '@/components/ResponsivePreview';
 import { ExportPanel } from '@/components/ExportPanel';
 import { InspirationBox } from '@/components/InspirationBox';
 import { SecurityAssistant } from '@/components/SecurityAssistant';
-import { Zap, Code, Brain, Sparkles, Monitor, Download, Lightbulb, Shield } from 'lucide-react';
+import { AuthPage } from '@/components/AuthPage';
+import { AdminDashboard } from '@/components/AdminDashboard';
+import { supabase } from '@/integrations/supabase/client';
+import { Zap, Code, Brain, Sparkles, Monitor, Download, Lightbulb, Shield, LogOut, Settings } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('editor');
   const [generatedCode, setGeneratedCode] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string>('user');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check current session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchUserRole(session.user.id);
+      }
+      setIsLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchUserRole(session.user.id);
+      } else {
+        setUserRole('user');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      setUserRole(data?.role || 'user');
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('user');
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handleAuthSuccess = () => {
+    // Auth state will be updated by the listener
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  if (userRole === 'admin') {
+    return <AdminDashboard onLogout={handleLogout} />;
+  }
 
   const tabs = [
     { id: 'editor', label: 'Code Editor', icon: Code },
@@ -27,6 +100,24 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       <Header />
+      
+      {/* User Info Bar */}
+      <div className="bg-slate-800/30 border-b border-slate-700/50">
+        <div className="container mx-auto px-6 py-2">
+          <div className="flex justify-between items-center">
+            <div className="text-slate-300 text-sm">
+              Welcome, {user.user_metadata?.display_name || user.email}
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-1 text-slate-400 hover:text-white transition-colors text-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
@@ -110,6 +201,7 @@ const Index = () => {
               <AIPanel 
                 onCodeGenerated={setGeneratedCode}
                 onTabChange={setActiveTab}
+                currentCode={generatedCode}
               />
             )}
             {activeTab === 'templates' && (
@@ -122,7 +214,7 @@ const Index = () => {
               <InspirationBox />
             )}
             {activeTab === 'export' && (
-              <ExportPanel code={generatedCode} />
+              <ExportPanel code={generatedCode} user={user} />
             )}
             {activeTab === 'security' && (
               <SecurityAssistant code={generatedCode} />
