@@ -10,6 +10,7 @@ import { InspirationBox } from '@/components/InspirationBox';
 import { SecurityAssistant } from '@/components/SecurityAssistant';
 import { AuthPage } from '@/components/AuthPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
+import { AdminSetup } from '@/components/AdminSetup';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, Code, Brain, Sparkles, Monitor, Download, Lightbulb, Shield, LogOut, Settings } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
@@ -20,12 +21,23 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string>('user');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAnyAdmin, setHasAnyAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check current session
+    // Check current session and if any admin exists
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      
+      // Check if any admin exists
+      const { data: adminData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1);
+      
+      setHasAnyAdmin((adminData && adminData.length > 0) || false);
+      
       if (session?.user) {
         await fetchUserRole(session.user.id);
       }
@@ -71,12 +83,23 @@ const Index = () => {
     // Auth state will be updated by the listener
   };
 
-  if (isLoading) {
+  const handleAdminCreated = async () => {
+    setHasAnyAdmin(true);
+    // Refresh to go to login
+    window.location.reload();
+  };
+
+  if (isLoading || hasAnyAdmin === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
+  }
+
+  // If no admin exists, show admin setup
+  if (!hasAnyAdmin) {
+    return <AdminSetup onAdminCreated={handleAdminCreated} />;
   }
 
   if (!user) {
