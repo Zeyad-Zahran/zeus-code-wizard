@@ -11,6 +11,7 @@ import { SecurityAssistant } from '@/components/SecurityAssistant';
 import { AuthPage } from '@/components/AuthPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { AdminSetup } from '@/components/AdminSetup';
+import { AdminLogin } from '@/components/AdminLogin';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, Code, Brain, Sparkles, Monitor, Download, Lightbulb, Shield, LogOut, Settings } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
@@ -22,8 +23,15 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string>('user');
   const [isLoading, setIsLoading] = useState(true);
   const [hasAnyAdmin, setHasAnyAdmin] = useState<boolean | null>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   useEffect(() => {
+    // Check URL for admin parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+      setShowAdminLogin(true);
+    }
+
     // Check current session and if any admin exists
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -89,11 +97,39 @@ const Index = () => {
     window.location.reload();
   };
 
+  const handleAdminLogin = () => {
+    setShowAdminLogin(true);
+    // Update URL
+    window.history.pushState({}, '', '?admin=true');
+  };
+
+  const handleBackToRegular = () => {
+    setShowAdminLogin(false);
+    // Remove admin parameter from URL
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleAdminLoginSuccess = () => {
+    // The auth state listener will handle the redirect
+    setShowAdminLogin(false);
+    window.history.pushState({}, '', '/');
+  };
+
   if (isLoading || hasAnyAdmin === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
+    );
+  }
+
+  // Show admin login if requested
+  if (showAdminLogin) {
+    return (
+      <AdminLogin 
+        onLoginSuccess={handleAdminLoginSuccess}
+        onBackToRegular={handleBackToRegular}
+      />
     );
   }
 
@@ -103,7 +139,12 @@ const Index = () => {
   }
 
   if (!user) {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <AuthPage 
+        onAuthSuccess={handleAuthSuccess} 
+        onAdminLogin={handleAdminLogin}
+      />
+    );
   }
 
   if (userRole === 'admin') {

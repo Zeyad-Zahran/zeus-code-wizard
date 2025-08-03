@@ -9,9 +9,10 @@ import { Card } from '@/components/ui/card';
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
+  onAdminLogin: () => void;
 }
 
-export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
+export const AuthPage = ({ onAuthSuccess, onAdminLogin }: AuthPageProps) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -216,6 +217,28 @@ export const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
+        </div>
+
+        <div className="mt-8 text-center space-y-4">
+          <p className="text-slate-400 text-sm">
+            هل أنت مدير؟{' '}
+            <button
+              onClick={onAdminLogin}
+              className="text-red-400 hover:text-red-300 font-medium"
+            >
+              انقر هنا للدخول للوحة الإدارة
+            </button>
+          </p>
+          
+          <div className="flex items-center justify-center space-x-2 text-slate-500">
+            <div className="h-px bg-slate-600 flex-1" />
+            <span className="px-3 text-xs">أو</span>
+            <div className="h-px bg-slate-600 flex-1" />
+          </div>
+          
+          <p className="text-slate-400 text-sm">
+            ابدأ رحلتك في البرمجة مع Zeus AI Coder
+          </p>
         </div>
       </Card>
     </div>
